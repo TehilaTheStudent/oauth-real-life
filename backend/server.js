@@ -26,6 +26,22 @@ app.use(session({
   }
 }));
 
+// INSECURE LOGGING MIDDLEWARE - FOR TESTING ONLY!
+app.use((req, res, next) => {
+  console.log("\n🔍 [DEBUG] ==================== REQUEST DEBUG ====================");
+  console.log("📍 [DEBUG] Method:", req.method);
+  console.log("📍 [DEBUG] URL:", req.url);
+  console.log("📍 [DEBUG] Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("📍 [DEBUG] Query params:", JSON.stringify(req.query, null, 2));
+  console.log("📍 [DEBUG] Body:", JSON.stringify(req.body, null, 2));
+  console.log("📍 [DEBUG] Cookies:", JSON.stringify(req.cookies, null, 2));
+  console.log("🔐 [DEBUG] Session ID:", req.sessionID);
+  console.log("🔐 [DEBUG] Full Session Data:", JSON.stringify(req.session, null, 2));
+  console.log("👤 [DEBUG] Session User:", JSON.stringify(req.session?.user, null, 2));
+  console.log("🔍 [DEBUG] ========================================================\n");
+  next();
+});
+
 // Helper function to get user profile from Google
 async function getGoogleUserProfile(accessToken) {
   const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -122,6 +138,10 @@ app.get("/auth/google/callback", async (req, res) => {
     };
     
     console.log("✅ [GOOGLE] User logged in:", userProfile.email);
+    console.log("🔐 [GOOGLE] INSECURE LOG - Full Google User Profile:", JSON.stringify(userProfile, null, 2));
+    console.log("🔐 [GOOGLE] INSECURE LOG - Access Token:", tokens.access_token);
+    console.log("🔐 [GOOGLE] INSECURE LOG - All Tokens:", JSON.stringify(tokens, null, 2));
+    console.log("🔐 [GOOGLE] INSECURE LOG - Session after login:", JSON.stringify(req.session, null, 2));
     res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
     
   } catch (error) {
@@ -210,6 +230,10 @@ app.get("/auth/github/callback", async (req, res) => {
     };
     
     console.log("✅ [GITHUB] User logged in:", userProfile.login);
+    console.log("🔐 [GITHUB] INSECURE LOG - Full GitHub User Profile:", JSON.stringify(userProfile, null, 2));
+    console.log("🔐 [GITHUB] INSECURE LOG - Access Token:", tokens.access_token);
+    console.log("🔐 [GITHUB] INSECURE LOG - All Tokens:", JSON.stringify(tokens, null, 2));
+    console.log("🔐 [GITHUB] INSECURE LOG - Session after login:", JSON.stringify(req.session, null, 2));
     res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
     
   } catch (error) {
@@ -221,15 +245,19 @@ app.get("/auth/github/callback", async (req, res) => {
 // Logout route
 app.post("/auth/logout", (req, res) => {
   console.log("🚪 [AUTH] User logging out");
+  console.log("🔐 [AUTH] INSECURE LOG - Session before logout:", JSON.stringify(req.session, null, 2));
+  console.log("🔐 [AUTH] INSECURE LOG - User being logged out:", JSON.stringify(req.session?.user, null, 2));
   
   req.session.destroy((err) => {
     if (err) {
       console.error("❌ [AUTH] Error destroying session:", err);
+      console.log("🔐 [AUTH] INSECURE LOG - Session destroy error details:", JSON.stringify(err, null, 2));
       return res.status(500).json({ error: "Failed to logout" });
     }
     
     res.clearCookie("connect.sid");
     console.log("✅ [AUTH] User logged out successfully");
+    console.log("🔐 [AUTH] INSECURE LOG - Session destroyed, cookie cleared");
     res.status(204).send();
   });
 });
@@ -237,13 +265,20 @@ app.post("/auth/logout", (req, res) => {
 // Get current user profile
 app.get("/api/user", (req, res) => {
   console.log("👤 [API] User profile requested");
+  console.log("🔐 [API] INSECURE LOG - Full session data:", JSON.stringify(req.session, null, 2));
+  console.log("🔐 [API] INSECURE LOG - Session ID:", req.sessionID);
+  console.log("🔐 [API] INSECURE LOG - Session user exists:", !!req.session.user);
   
   if (!req.session.user) {
     console.log("❌ [API] No user in session");
+    console.log("🔐 [API] INSECURE LOG - Session is:", JSON.stringify(req.session, null, 2));
+    console.log("🔐 [API] INSECURE LOG - All cookies:", JSON.stringify(req.cookies, null, 2));
+    console.log("🔐 [API] INSECURE LOG - Raw cookie header:", req.headers.cookie);
     return res.status(401).json({ error: "Not authenticated" });
   }
   
   console.log("✅ [API] Returning user profile for:", req.session.user.email);
+  console.log("🔐 [API] INSECURE LOG - Full user data being returned:", JSON.stringify(req.session.user, null, 2));
   res.json(req.session.user);
 });
 
