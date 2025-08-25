@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: OAuth Login API
+  version: 1.0.0
+  description: >
+    Backend API for login with Google and GitHub, logout, and user profile.
+
+servers:
+  - url: https://your-backend.onrender.com
+    description: Production server
+  - url: http://localhost:4000
+    description: Local development
+
+paths:
+  /auth/google:
+    get:
+      summary: Start Google login
+      description: Redirects the user to Google OAuth 2.0 login page.
+      responses:
+        "302":
+          description: Redirect to Google login
+
+  /auth/google/callback:
+    get:
+      summary: Google OAuth callback
+      description: Handles the callback from Google and sets user session.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Google
+      responses:
+        "302":
+          description: Redirect to frontend after login success
+
+  /auth/github:
+    get:
+      summary: Start GitHub login
+      description: Redirects the user to GitHub OAuth 2.0 login page.
+      responses:
+        "302":
+          description: Redirect to GitHub login
+
+  /auth/github/callback:
+    get:
+      summary: GitHub OAuth callback
+      description: Handles the callback from GitHub and sets user session.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from GitHub
+      responses:
+        "302":
+          description: Redirect to frontend after login success
+
+  /auth/logout:
+    post:
+      summary: Logout user
+      description: Clears the user session or cookie.
+      responses:
+        "204":
+          description: Successfully logged out
+
+  /api/user:
+    get:
+      summary: Get logged-in user profile
+      description: Returns the profile information of the currently logged-in user.
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  avatar_url:
+                    type: string
+                    format: uri
+        "401":
+          description: Not logged in
