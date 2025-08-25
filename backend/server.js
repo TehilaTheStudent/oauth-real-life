@@ -3,6 +3,7 @@ import session from "express-session";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
@@ -14,15 +15,19 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(session({
   secret: process.env.SESSION_SECRET || "your-secret-key",
   resave: false,
   saveUninitialized: false,
+  name: 'sessionId', // Custom session cookie name
   cookie: {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax', // Allow cross-site cookies in production
+    domain: process.env.NODE_ENV === "production" ? '.onrender.com' : undefined // Share cookies across subdomains
   }
 }));
 
@@ -255,7 +260,7 @@ app.post("/auth/logout", (req, res) => {
       return res.status(500).json({ error: "Failed to logout" });
     }
     
-    res.clearCookie("connect.sid");
+    res.clearCookie("sessionId");
     console.log("✅ [AUTH] User logged out successfully");
     console.log("🔐 [AUTH] INSECURE LOG - Session destroyed, cookie cleared");
     res.status(204).send();
