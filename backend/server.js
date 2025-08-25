@@ -147,7 +147,16 @@ app.get("/auth/google/callback", async (req, res) => {
     console.log("🔐 [GOOGLE] INSECURE LOG - Access Token:", tokens.access_token);
     console.log("🔐 [GOOGLE] INSECURE LOG - All Tokens:", JSON.stringify(tokens, null, 2));
     console.log("🔐 [GOOGLE] INSECURE LOG - Session after login:", JSON.stringify(req.session, null, 2));
-    res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
+    
+    // Force session save before redirect
+    req.session.save((err) => {
+      if (err) {
+        console.error("❌ [GOOGLE] Session save error:", err);
+      } else {
+        console.log("✅ [GOOGLE] Session saved successfully");
+      }
+      res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
+    });
     
   } catch (error) {
     console.error("💥 [GOOGLE] Error during authentication:", error);
@@ -239,7 +248,16 @@ app.get("/auth/github/callback", async (req, res) => {
     console.log("🔐 [GITHUB] INSECURE LOG - Access Token:", tokens.access_token);
     console.log("🔐 [GITHUB] INSECURE LOG - All Tokens:", JSON.stringify(tokens, null, 2));
     console.log("🔐 [GITHUB] INSECURE LOG - Session after login:", JSON.stringify(req.session, null, 2));
-    res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
+    
+    // Force session save before redirect
+    req.session.save((err) => {
+      if (err) {
+        console.error("❌ [GITHUB] Session save error:", err);
+      } else {
+        console.log("✅ [GITHUB] Session saved successfully");
+      }
+      res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
+    });
     
   } catch (error) {
     console.error("💥 [GITHUB] Error during authentication:", error);
@@ -264,6 +282,29 @@ app.post("/auth/logout", (req, res) => {
     console.log("✅ [AUTH] User logged out successfully");
     console.log("🔐 [AUTH] INSECURE LOG - Session destroyed, cookie cleared");
     res.status(204).send();
+  });
+});
+
+// Test route to debug session issues
+app.get("/api/debug-session", (req, res) => {
+  console.log("🔧 [DEBUG] Session debug endpoint called");
+  console.log("🔧 [DEBUG] Session ID:", req.sessionID);
+  console.log("🔧 [DEBUG] Session data:", JSON.stringify(req.session, null, 2));
+  console.log("🔧 [DEBUG] Cookies received:", JSON.stringify(req.cookies, null, 2));
+  console.log("🔧 [DEBUG] Raw cookie header:", req.headers.cookie);
+  
+  // Set a test value in session
+  if (!req.session.testValue) {
+    req.session.testValue = `Set at ${new Date().toISOString()}`;
+    console.log("🔧 [DEBUG] Set test value in session");
+  }
+  
+  res.json({
+    sessionId: req.sessionID,
+    sessionData: req.session,
+    cookies: req.cookies,
+    rawCookieHeader: req.headers.cookie,
+    timestamp: new Date().toISOString()
   });
 });
 
