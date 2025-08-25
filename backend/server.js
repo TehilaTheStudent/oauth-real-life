@@ -9,7 +9,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: ["http://localhost:3000", "https://oauth-real-life-frontend.onrender.com"],
   credentials: true
 }));
 
@@ -160,27 +160,37 @@ app.get("/auth/github/callback", async (req, res) => {
   }
   
   try {
-    // Exchange code for access token
+    // Exchange code for access token with timeout and retry
+    console.log("🔄 [GITHUB] Attempting token exchange...");
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST",
       headers: {
         "Accept": "application/json",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": "OAuth-App"
       },
       body: JSON.stringify({
         client_id: process.env.GITHUB_CLIENT_ID,
         client_secret: process.env.GITHUB_CLIENT_SECRET,
         code
       }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text();
-      console.error("❌ [GITHUB] Token exchange failed:", errorText);
+      console.error("❌ [GITHUB] Token exchange failed:", tokenRes.status, errorText);
       return res.redirect(`${process.env.FRONTEND_URL || "http://localhost:3000"}?error=token_exchange_failed`);
     }
 
     const tokens = await tokenRes.json();
+    console.log("✅ [GITHUB] Token exchange successful");
     
     if (tokens.error) {
       console.error("❌ [GITHUB] Token error:", tokens.error);
