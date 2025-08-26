@@ -10,7 +10,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ["https://oauth-real-life-frontend.onrender.com"],
+  origin: "https://oauth-real-life-frontend.onrender.com",
   credentials: true
 }));
 
